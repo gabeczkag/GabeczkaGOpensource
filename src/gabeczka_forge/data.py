@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .tokenizer import WordTokenizer
+from .code_reasoning import analyze_code
 
 
 def load_json_records(data_dir: str | Path) -> list[dict[str, Any]]:
@@ -33,7 +34,8 @@ def format_record(record: dict[str, Any]) -> str:
     word = record.get("word", "")
     explanation = record.get("explanation", "")
     examples = record.get("examples", "")
-    return f"<language>{language}</language>\n<word>{word}</word>\n<explanation>{explanation}</explanation>\n<examples>{examples}</examples>\n<instruction>{instruction}</instruction>\n<code>\n{code}\n</code>\n<tests>\n{tests}\n</tests>\n"
+    analysis = analyze_code(code, language) if code else []
+    return f"<language>{language}</language>\n<word>{word}</word>\n<explanation>{explanation}</explanation>\n<examples>{examples}</examples>\n<instruction>{instruction}</instruction>\n<code_analysis>{analysis}</code_analysis>\n<code>\n{code}\n</code>\n<tests>\n{tests}\n</tests>\n"
 
 
 class JsonCodeDataset(Dataset):
