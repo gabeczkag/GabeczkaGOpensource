@@ -5,6 +5,8 @@ from typing import Any
 import torch
 from torch.utils.data import Dataset
 
+from .tokenizer import WordTokenizer
+
 
 def load_json_records(data_dir: str | Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
@@ -32,12 +34,12 @@ def format_record(record: dict[str, Any]) -> str:
 class JsonCodeDataset(Dataset):
     """Byte-level fallback dataset for structured JSON code records."""
 
-    def __init__(self, records: list[dict[str, Any]], context_length: int) -> None:
+    def __init__(self, records: list[dict[str, Any]], context_length: int, tokenizer: WordTokenizer) -> None:
         self.context_length = context_length
         text = "\n".join(format_record(record) for record in records)
         if not text:
             raise ValueError("JSON records produced no training text")
-        self.tokens = torch.tensor(list(text.encode("utf-8")), dtype=torch.long)
+        self.tokens = torch.tensor(tokenizer.encode(text), dtype=torch.long)
         if len(self.tokens) <= context_length:
             raise ValueError("Training data must be longer than context_length")
 
@@ -48,13 +50,15 @@ class JsonCodeDataset(Dataset):
         return {"input_ids": self.tokens[index : index + self.context_length]}
 
 
-def build_datasets(data_dir: str | Path, context_length: int, test_ratio: float) -> tuple[JsonCodeDataset, JsonCodeDataset]:
+def build_datasets(data_dir: str | Path, context_length: int, test_ratio: float, vocab_size: int) -> tuple[JsonCodeDataset, JsonCodeDataset, WordTokenizer]:
     if not 0.0 < test_ratio < 1.0:
         raise ValueError("test_ratio must be between 0 and 1")
     records = load_json_records(data_dir)
     split_index = max(1, int(len(records) * (1.0 - test_ratio)))
     split_index = min(split_index, len(records) - 1)
+    tokenizer = WordTokenizer.train((format_record(record) for record in records[:split_index]), vocab_size)
     return (
-        JsonCodeDataset(records[:split_index], context_length),
-        JsonCodeDataset(records[split_index:], context_length),
+        JsonCodeDataset(records[:split_index], context_length, tokenizer),
+        JsonCodeDataset(records[split_index:], context_length, tokenizer),
+        tokenizer,
     )

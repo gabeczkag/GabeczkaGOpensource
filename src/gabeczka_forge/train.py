@@ -38,15 +38,18 @@ def evaluate(model: GabeczkaForgeModel, loader: DataLoader, device: torch.device
 
 def main() -> None:
     args = parse_args()
-    model_config = ModelConfig(context_length=args.context_length)
+    tokenizer_vocab_size = 256 if args.tiny else 32768
+    train_dataset, test_dataset, tokenizer = build_datasets(args.data, args.context_length, args.test_ratio, tokenizer_vocab_size)
+    model_config = ModelConfig(vocab_size=tokenizer.vocab_size, context_length=args.context_length)
     if args.tiny:
-        model_config = ModelConfig(vocab_size=256, context_length=args.context_length, hidden_size=128, intermediate_size=256, num_layers=2, num_attention_heads=4, num_key_value_heads=2)
+        model_config = ModelConfig(vocab_size=tokenizer.vocab_size, context_length=args.context_length, hidden_size=128, intermediate_size=256, num_layers=2, num_attention_heads=4, num_key_value_heads=2)
     train_config = TrainConfig(output_dir=args.output)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GabeczkaForgeModel(model_config).to(device)
-    train_dataset, test_dataset = build_datasets(args.data, model_config.context_length, args.test_ratio)
     loader = DataLoader(train_dataset, batch_size=train_config.batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=train_config.batch_size)
+    Path(train_config.output_dir).mkdir(parents=True, exist_ok=True)
+    tokenizer.save(Path(train_config.output_dir) / "tokenizer.json")
     optimizer = torch.optim.AdamW(model.parameters(), lr=train_config.learning_rate, weight_decay=train_config.weight_decay)
     model.train()
     step = 0
