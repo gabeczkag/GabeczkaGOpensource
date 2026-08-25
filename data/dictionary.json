@@ -1,0 +1,26 @@
+[
+  {
+    "language": "en",
+    "word": "function",
+    "explanation": "A reusable block of code that accepts inputs and returns a result.",
+    "examples": "In Python, def factorial(value): defines a function."
+  },
+  {
+    "language": "pl",
+    "word": "funkcja",
+    "explanation": "Nazwany fragment programu, który wykonuje określone zadanie i może zwracać wynik.",
+    "examples": "Funkcja suma przyjmuje liczby i zwraca ich sumę."
+  },
+  {
+    "language": "en",
+    "word": "ownership",
+    "explanation": "The Rust rule that each value has one owner responsible for its lifetime and cleanup.",
+    "examples": "Moving a String transfers ownership to the new variable."
+  },
+  {
+    "language": "pl",
+    "word": "wskaznik",
+    "explanation": "Zmienna przechowujaca adres innego obiektu w pamieci.",
+    "examples": "W C++ wskaznik mozna dereferencjowac operatorem gwiazdki."
+  }
+]

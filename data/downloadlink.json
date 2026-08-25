@@ -1,18 +1,18 @@
 {
-  "description": "Public raw word-list sources for building the English and Polish vocabulary.",
+  "description": "Public dictionary sources with definitions, examples, and grammatical metadata.",
   "license_check_required": true,
   "sources": [
     {
       "language": "en",
-      "name": "dwyl english words",
-      "raw_url": "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt",
-      "format": "one word per line"
+      "name": "Kaikki English Wiktionary extraction",
+      "raw_url": "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl",
+      "format": "JSONL; entries include word, senses, glosses, and examples"
     },
     {
       "language": "pl",
-      "name": "FrequencyWords Polish list",
-      "raw_url": "https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/pl/pl_50k.txt",
-      "format": "word and frequency per line"
+      "name": "Kaikki Polish Wiktionary extraction",
+      "raw_url": "https://kaikki.org/dictionary/Polish/kaikki.org-dictionary-Polish.jsonl",
+      "format": "JSONL; entries include word, senses, glosses, and examples"
     }
   ]
 }

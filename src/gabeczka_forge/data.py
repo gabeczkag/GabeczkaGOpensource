@@ -11,6 +11,8 @@ from .tokenizer import WordTokenizer
 def load_json_records(data_dir: str | Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for path in sorted(Path(data_dir).glob("*.json")):
+        if path.name == "downloadlink.json":
+            continue
         with path.open(encoding="utf-8") as file:
             payload = json.load(file)
         if isinstance(payload, dict):
@@ -28,7 +30,10 @@ def format_record(record: dict[str, Any]) -> str:
     instruction = record.get("instruction", "")
     code = record.get("code", "")
     tests = record.get("tests", "")
-    return f"<language>{language}</language>\n<instruction>{instruction}</instruction>\n<code>\n{code}\n</code>\n<tests>\n{tests}\n</tests>\n"
+    word = record.get("word", "")
+    explanation = record.get("explanation", "")
+    examples = record.get("examples", "")
+    return f"<language>{language}</language>\n<word>{word}</word>\n<explanation>{explanation}</explanation>\n<examples>{examples}</examples>\n<instruction>{instruction}</instruction>\n<code>\n{code}\n</code>\n<tests>\n{tests}\n</tests>\n"
 
 
 class JsonCodeDataset(Dataset):

@@ -15,6 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--context-length", type=int, default=256)
     parser.add_argument("--test-ratio", type=float, default=0.2)
+    parser.add_argument("--num-workers", type=int, default=0, help="DataLoader worker processes")
+    parser.add_argument("--torch-threads", type=int, default=0, help="CPU threads; 0 keeps PyTorch default")
     parser.add_argument("--tiny", action="store_true", help="Use a CPU-friendly smoke-test model")
     parser.add_argument("--output", default="checkpoints")
     return parser.parse_args()
@@ -38,6 +40,10 @@ def evaluate(model: GabeczkaForgeModel, loader: DataLoader, device: torch.device
 
 def main() -> None:
     args = parse_args()
+    if args.num_workers < 0 or args.torch_threads < 0:
+        raise ValueError("thread counts cannot be negative")
+    if args.torch_threads:
+        torch.set_num_threads(args.torch_threads)
     tokenizer_vocab_size = 256 if args.tiny else 32768
     train_dataset, test_dataset, tokenizer = build_datasets(args.data, args.context_length, args.test_ratio, tokenizer_vocab_size)
     model_config = ModelConfig(vocab_size=tokenizer.vocab_size, context_length=args.context_length)
@@ -46,8 +52,12 @@ def main() -> None:
     train_config = TrainConfig(output_dir=args.output)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GabeczkaForgeModel(model_config).to(device)
-    loader = DataLoader(train_dataset, batch_size=train_config.batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=train_config.batch_size)
+    loader_options = {"batch_size": train_config.batch_size, "num_workers": args.num_workers}
+    if args.num_workers:
+        loader_options["persistent_workers"] = True
+        loader_options["prefetch_factor"] = 2
+    loader = DataLoader(train_dataset, shuffle=True, **loader_options)
+    test_loader = DataLoader(test_dataset, **loader_options)
     Path(train_config.output_dir).mkdir(parents=True, exist_ok=True)
     tokenizer.save(Path(train_config.output_dir) / "tokenizer.json")
     optimizer = torch.optim.AdamW(model.parameters(), lr=train_config.learning_rate, weight_decay=train_config.weight_decay)
