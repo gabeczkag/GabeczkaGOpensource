@@ -4,9 +4,11 @@
   "sources": [
     {
       "language": "en",
-      "name": "Kaikki English Wiktionary extraction",
-      "raw_url": "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl",
-      "format": "JSONL; entries include word, senses, glosses, and examples"
+      "name": "Webster's Unabridged Dictionary raw text",
+      "raw_url": "https://raw.githubusercontent.com/ssvivian/WebstersDictionary/refs/heads/master/dictionary.txt",
+      "structured_url": "https://raw.githubusercontent.com/ssvivian/WebstersDictionary/refs/heads/master/dictionary.json",
+      "format": "TXT or JSON; entries include definitions, parts of speech, synonyms, and etymologies",
+      "license": "Project Gutenberg License for the dictionary content"
     },
     {
       "language": "pl",
