@@ -7,6 +7,7 @@ from gabeczka_forge.config import ModelConfig
 from gabeczka_forge.data import format_record, load_json_records
 from gabeczka_forge.model import GabeczkaForgeModel
 from gabeczka_forge.tokenizer import WordTokenizer
+from gabeczka_forge.webdocs import fetch_html_text
 
 
 def find_checkpoint(path: str) -> Path:
@@ -80,6 +81,7 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, tokenizer = load_model(args.checkpoint, args.tiny, args.context_length, args.data, device)
     print(f"Gabeczka Forge chat ({device}). Type 'exit' to quit.")
+    documentation = ""
     while True:
         try:
             prompt = input("You: ")
@@ -88,8 +90,17 @@ def main() -> None:
             break
         if prompt.strip().lower() == "exit":
             break
+        if prompt.strip().lower().startswith("/docs "):
+            try:
+                url = prompt.strip()[6:].strip()
+                documentation = fetch_html_text(url)
+                print(f"Docs loaded: {len(documentation):,} characters")
+            except (OSError, ValueError) as error:
+                print(f"Docs error: {error}")
+            continue
         try:
-            response = generate(model, tokenizer, prompt, args.max_new_tokens, args.min_new_tokens, args.temperature, device)
+            context = f"Documentation:\n{documentation}\n\nQuestion:\n{prompt}" if documentation else prompt
+            response = generate(model, tokenizer, context, args.max_new_tokens, args.min_new_tokens, args.temperature, device)
             print(f"Model: {response}")
         except ValueError as error:
             print(f"Error: {error}")
