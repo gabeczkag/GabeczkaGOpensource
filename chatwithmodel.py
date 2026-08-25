@@ -43,7 +43,7 @@ def load_model(checkpoint_path: str, tiny: bool, context_length: int, data_dir: 
 
 
 @torch.no_grad()
-def generate(model: GabeczkaForgeModel, tokenizer: WordTokenizer, prompt: str, max_new_tokens: int, temperature: float, device: torch.device) -> str:
+def generate(model: GabeczkaForgeModel, tokenizer: WordTokenizer, prompt: str, max_new_tokens: int, min_new_tokens: int, temperature: float, device: torch.device) -> str:
     if temperature < 0:
         raise ValueError("temperature cannot be negative")
     tokens = tokenizer.encode(prompt, add_eos=False)
@@ -59,7 +59,7 @@ def generate(model: GabeczkaForgeModel, tokenizer: WordTokenizer, prompt: str, m
         else:
             next_token = torch.multinomial(torch.softmax(logits / temperature, dim=-1), num_samples=1)
         generated = torch.cat((generated, next_token), dim=1)
-        if next_token.item() == tokenizer.eos_id:
+        if next_token.item() == tokenizer.eos_id and generated.shape[1] - prompt_length >= min_new_tokens:
             break
     return tokenizer.decode(generated[0, prompt_length:].tolist())
 
@@ -70,9 +70,12 @@ def main() -> None:
     parser.add_argument("--data", default="data", help="JSON data used to rebuild a missing tokenizer")
     parser.add_argument("--context-length", type=int, default=256)
     parser.add_argument("--max-new-tokens", type=int, default=128)
-    parser.add_argument("--temperature", type=float, default=0.0, help="0 uses greedy decoding")
+    parser.add_argument("--min-new-tokens", type=int, default=4)
+    parser.add_argument("--temperature", type=float, default=0.7, help="0 uses greedy decoding")
     parser.add_argument("--tiny", action="store_true", help="Load a CPU-friendly checkpoint")
     args = parser.parse_args()
+    if args.min_new_tokens < 0 or args.max_new_tokens < args.min_new_tokens:
+        parser.error("--min-new-tokens must be non-negative and no greater than --max-new-tokens")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model, tokenizer = load_model(args.checkpoint, args.tiny, args.context_length, args.data, device)
@@ -86,7 +89,7 @@ def main() -> None:
         if prompt.strip().lower() == "exit":
             break
         try:
-            response = generate(model, tokenizer, prompt, args.max_new_tokens, args.temperature, device)
+            response = generate(model, tokenizer, prompt, args.max_new_tokens, args.min_new_tokens, args.temperature, device)
             print(f"Model: {response}")
         except ValueError as error:
             print(f"Error: {error}")

@@ -37,7 +37,7 @@ class WordTokenizer:
         return tokens
 
     def decode(self, token_ids: Iterable[int]) -> str:
-        return "".join(self.id_to_token[token_id] for token_id in token_ids if 0 <= token_id < self.vocab_size and token_id not in (0, 1, 2))
+        return "".join(self.id_to_token[token_id] for token_id in token_ids if 0 <= token_id < self.vocab_size and token_id != 0)
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps({"vocabulary": self.id_to_token}, ensure_ascii=False, indent=2), encoding="utf-8")
