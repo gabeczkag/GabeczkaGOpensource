@@ -39,8 +39,8 @@ class RotaryEmbedding(nn.Module):
     def _rotate(states: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
         first, second = states[..., ::2], states[..., 1::2]
         rotated = torch.stack((-second, first), dim=-1).flatten(-2)
-        frequencies = torch.stack((cos, cos), dim=-1).flatten(-1)
-        sine = torch.stack((sin, sin), dim=-1).flatten(-1)
+        frequencies = torch.stack((cos, cos), dim=-1).flatten(-2)
+        sine = torch.stack((sin, sin), dim=-1).flatten(-2)
         return states * frequencies + rotated * sine
 
 
