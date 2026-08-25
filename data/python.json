@@ -1,0 +1,14 @@
+[
+  {
+    "language": "python",
+    "instruction": "Write a function that returns the factorial of a non-negative integer.",
+    "code": "def factorial(value: int) -> int:\n    if value < 0:\n        raise ValueError('value must be non-negative')\n    result = 1\n    for number in range(2, value + 1):\n        result *= number\n    return result",
+    "tests": "assert factorial(0) == 1\nassert factorial(5) == 120"
+  },
+  {
+    "language": "python",
+    "instruction": "Group words by their first letter.",
+    "code": "from collections import defaultdict\n\ndef group_by_first_letter(words: list[str]) -> dict[str, list[str]]:\n    groups = defaultdict(list)\n    for word in words:\n        if word:\n            groups[word[0].lower()].append(word)\n    return dict(groups)",
+    "tests": "assert group_by_first_letter(['Apple', 'apricot', 'Berry']) == {'a': ['Apple', 'apricot'], 'b': ['Berry']}"
+  }
+]

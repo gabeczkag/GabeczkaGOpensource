@@ -1,0 +1,14 @@
+[
+  {
+    "language": "rust",
+    "instruction": "Implement a function that sums a slice of integers.",
+    "code": "fn sum_values(values: &[i64]) -> i64 {\n    values.iter().sum()\n}",
+    "tests": "assert_eq!(sum_values(&[1, 2, 3]), 6);"
+  },
+  {
+    "language": "rust",
+    "instruction": "Return the first even number in a slice.",
+    "code": "fn first_even(values: &[i32]) -> Option<i32> {\n    values.iter().copied().find(|value| value % 2 == 0)\n}",
+    "tests": "assert_eq!(first_even(&[1, 3, 8]), Some(8));"
+  }
+]

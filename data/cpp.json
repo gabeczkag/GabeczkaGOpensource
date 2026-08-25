@@ -1,0 +1,14 @@
+[
+  {
+    "language": "cpp",
+    "instruction": "Return the greatest value in a vector.",
+    "code": "#include <algorithm>\n#include <vector>\n\nint maximum(const std::vector<int>& values) {\n    return *std::max_element(values.begin(), values.end());\n}",
+    "tests": "assert(maximum({2, 7, 4}) == 7);"
+  },
+  {
+    "language": "cpp",
+    "instruction": "Count vowels in a string.",
+    "code": "#include <string>\n\nint count_vowels(const std::string& text) {\n    int count = 0;\n    for (char character : text) {\n        count += std::string(\"aeiouAEIOU\").find(character) != std::string::npos;\n    }\n    return count;\n}",
+    "tests": "assert(count_vowels(\"Gabeczka\") == 3);"
+  }
+]

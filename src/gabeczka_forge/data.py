@@ -1,18 +1,42 @@
+import json
 from pathlib import Path
+from typing import Any
 
 import torch
 from torch.utils.data import Dataset
 
 
-class ByteCodeDataset(Dataset):
-    """Temporary byte dataset; replace it with a trained tokenizer before pretraining."""
+def load_json_records(data_dir: str | Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in sorted(Path(data_dir).glob("*.json")):
+        with path.open(encoding="utf-8") as file:
+            payload = json.load(file)
+        if isinstance(payload, dict):
+            payload = payload.get("records", [payload])
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            raise ValueError(f"Expected a JSON object or object list in {path}")
+        records.extend(payload)
+    if not records:
+        raise ValueError(f"No JSON records found in {data_dir}")
+    return records
 
-    def __init__(self, data_dir: str | Path, context_length: int) -> None:
+
+def format_record(record: dict[str, Any]) -> str:
+    language = record.get("language", "text")
+    instruction = record.get("instruction", "")
+    code = record.get("code", "")
+    tests = record.get("tests", "")
+    return f"<language>{language}</language>\n<instruction>{instruction}</instruction>\n<code>\n{code}\n</code>\n<tests>\n{tests}\n</tests>\n"
+
+
+class JsonCodeDataset(Dataset):
+    """Byte-level fallback dataset for structured JSON code records."""
+
+    def __init__(self, records: list[dict[str, Any]], context_length: int) -> None:
         self.context_length = context_length
-        paths = sorted(Path(data_dir).rglob("*"))
-        text = "\n".join(path.read_text(encoding="utf-8", errors="ignore") for path in paths if path.is_file())
+        text = "\n".join(format_record(record) for record in records)
         if not text:
-            raise ValueError(f"No readable training files found in {data_dir}")
+            raise ValueError("JSON records produced no training text")
         self.tokens = torch.tensor(list(text.encode("utf-8")), dtype=torch.long)
         if len(self.tokens) <= context_length:
             raise ValueError("Training data must be longer than context_length")
@@ -22,3 +46,15 @@ class ByteCodeDataset(Dataset):
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         return {"input_ids": self.tokens[index : index + self.context_length]}
+
+
+def build_datasets(data_dir: str | Path, context_length: int, test_ratio: float) -> tuple[JsonCodeDataset, JsonCodeDataset]:
+    if not 0.0 < test_ratio < 1.0:
+        raise ValueError("test_ratio must be between 0 and 1")
+    records = load_json_records(data_dir)
+    split_index = max(1, int(len(records) * (1.0 - test_ratio)))
+    split_index = min(split_index, len(records) - 1)
+    return (
+        JsonCodeDataset(records[:split_index], context_length),
+        JsonCodeDataset(records[split_index:], context_length),
+    )
