@@ -34,18 +34,24 @@ def load_model(checkpoint_path: str, tiny: bool, context_length: int, device: to
 
 @torch.no_grad()
 def generate(model: GabeczkaForgeModel, tokenizer: WordTokenizer, prompt: str, max_new_tokens: int, temperature: float, device: torch.device) -> str:
-    if temperature <= 0:
-        raise ValueError("temperature must be greater than 0")
+    if temperature < 0:
+        raise ValueError("temperature cannot be negative")
     tokens = tokenizer.encode(prompt, add_eos=False)
     if not tokens:
         raise ValueError("prompt cannot be empty")
     generated = torch.tensor([tokens], dtype=torch.long, device=device)
+    prompt_length = generated.shape[1]
     for _ in range(max_new_tokens):
         input_ids = generated[:, -model.config.context_length :]
-        logits = model(input_ids)["logits"][:, -1, :] / temperature
-        next_token = torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
+        logits = model(input_ids)["logits"][:, -1, :]
+        if temperature == 0:
+            next_token = logits.argmax(dim=-1, keepdim=True)
+        else:
+            next_token = torch.multinomial(torch.softmax(logits / temperature, dim=-1), num_samples=1)
         generated = torch.cat((generated, next_token), dim=1)
-    return tokenizer.decode(generated[0].tolist())
+        if next_token.item() == tokenizer.eos_id:
+            break
+    return tokenizer.decode(generated[0, prompt_length:].tolist())
 
 
 def main() -> None:
@@ -53,7 +59,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", default="checkpoints", help="Checkpoint file or directory")
     parser.add_argument("--context-length", type=int, default=256)
     parser.add_argument("--max-new-tokens", type=int, default=128)
-    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--temperature", type=float, default=0.0, help="0 uses greedy decoding")
     parser.add_argument("--tiny", action="store_true", help="Load a CPU-friendly checkpoint")
     args = parser.parse_args()
 
